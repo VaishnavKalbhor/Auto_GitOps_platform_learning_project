@@ -1,0 +1,33 @@
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+*.tfvars
+!*.tfvars.example
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+.terraform.lock.hcl
+
+# Kubernetes / kubeconfig
+kubeconfig
+*.kubeconfig
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Python (test scripts / tooling)
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Misc
+*.log
