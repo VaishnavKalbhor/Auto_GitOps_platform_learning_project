@@ -9,3 +9,19 @@ output "private_subnet_ids" {
 output "public_subnet_ids" {
   value = module.vpc.public_subnet_ids
 }
+
+output "cluster_name" {
+  value = module.eks.cluster_name
+}
+
+output "cluster_endpoint" {
+  value = module.eks.cluster_endpoint
+}
+
+output "region" {
+  value = var.aws_region
+}
+
+output "node_group_name" {
+  value = module.eks.node_group_name
+}

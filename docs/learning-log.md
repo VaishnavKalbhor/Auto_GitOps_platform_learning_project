@@ -19,3 +19,13 @@ Built the VPC Terraform module: one VPC, 2 AZs, 2 public + 2 private subnets, an
 Wired `terraform/environments/dev` to call the vpc module, with backend.tf left as an empty `s3` block (values passed via `-backend-config` at `terraform init` time rather than committed). Added tests/terraform/validate.sh (`terraform fmt -check` + `terraform init -backend=false` + `terraform validate` -- safe to run without AWS credentials).
 
 Still no terraform binary in this sandbox to actually run that script -- hand-reviewed the HCL instead (brace balance, resource references, ternary syntax for the conditional NAT gateway). Run `tests/terraform/validate.sh` yourself before the first real `terraform plan`.
+
+## Day 4
+
+Built the IAM module (cluster role + node role, with the standard AmazonEKSClusterPolicy / AmazonEKSWorkerNodePolicy / AmazonEKS_CNI_Policy / AmazonEC2ContainerRegistryReadOnly attachments) and the EKS module (cluster, managed node group with `ignore_changes` on desired_size so Terraform doesn't fight Kubernetes-side autoscaling, an OIDC provider for future IRSA use, and the vpc-cni/coredns/kube-proxy add-ons). Wired both into environments/dev/main.tf alongside the vpc module.
+
+Caught and fixed two real Terraform correctness bugs while hand-reviewing (still no terraform binary available to validate for real):
+1. An invalid `depends_on = [var.cluster_role_arn]` on the EKS cluster resource -- `depends_on` can only reference resources/modules/data sources, not variables. Removed it; the implicit dependency through `role_arn = var.cluster_role_arn` already orders this correctly once the root module wires `module.iam.cluster_role_arn` in.
+2. Missing `required_providers` blocks in the vpc, iam, and eks modules (eks additionally needs the `tls` provider for the OIDC thumbprint lookup) -- added them to all three.
+
+Ran a brace/paren/bracket balance check across every .tf file as a lightweight sanity check in place of `terraform validate`. All balanced. Still strongly recommend running `tests/terraform/validate.sh` for real once you have Terraform installed locally -- a balance check catches typos, not semantic errors (wrong attribute names, type mismatches, etc.).
