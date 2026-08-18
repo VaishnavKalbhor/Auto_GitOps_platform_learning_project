@@ -29,3 +29,9 @@ Caught and fixed two real Terraform correctness bugs while hand-reviewing (still
 2. Missing `required_providers` blocks in the vpc, iam, and eks modules (eks additionally needs the `tls` provider for the OIDC thumbprint lookup) -- added them to all three.
 
 Ran a brace/paren/bracket balance check across every .tf file as a lightweight sanity check in place of `terraform validate`. All balanced. Still strongly recommend running `tests/terraform/validate.sh` for real once you have Terraform installed locally -- a balance check catches typos, not semantic errors (wrong attribute names, type mismatches, etc.).
+
+## Day 5
+
+Wrote out the full deployment runbook for the first real `terraform apply` -- bootstrap first (creates remote state), then the dev environment with explicit `-backend-config` flags (kept out of the committed backend.tf so no real bucket name is hardcoded in git), then `aws eks update-kubeconfig` and verification with `kubectl get nodes` / `kubectl get pods -A`, ending with `terraform destroy`. Added docs/screenshots/README.md listing all the evidence screenshots this project will eventually need.
+
+**Not executed** -- no AWS account access in this build environment. This is the first day where "learning goal: provision the cluster and connect to it" genuinely cannot be completed without real AWS credentials; everything here is the runbook, ready to follow, not a report of having done it. The platform-design.md EKS section is explicitly marked to be filled in with real observations after the first apply.

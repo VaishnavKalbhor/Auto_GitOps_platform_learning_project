@@ -20,3 +20,61 @@ Expected shape: the platform uses Amazon EKS as the managed Kubernetes control p
 - Public EKS API endpoint (see [security-findings.md](security-findings.md) for the documented tradeoff).
 - No multi-account or multi-cluster setup.
 - Node groups are small and cost-optimized, not right-sized for real workloads.
+
+## Deployment Runbook (first real `terraform apply`)
+
+Run this from a machine with the AWS CLI configured (`aws configure` or SSO),
+Terraform installed, and **an AWS Budget alarm already set** (see
+[cost-notes.md](cost-notes.md)).
+
+```bash
+# 1. One-time bootstrap (creates the S3 state bucket + DynamoDB lock table)
+cd terraform/bootstrap
+terraform init
+terraform fmt -check
+terraform validate
+terraform plan -var="state_bucket_name=autogitops-terraform-state-<yourname>"
+terraform apply -var="state_bucket_name=autogitops-terraform-state-<yourname>"
+
+# 2. Point the dev environment at that remote state
+cd ../environments/dev
+terraform init \
+  -backend-config="bucket=autogitops-terraform-state-<yourname>" \
+  -backend-config="key=environments/dev/terraform.tfstate" \
+  -backend-config="region=eu-central-1" \
+  -backend-config="dynamodb_table=autogitops-terraform-locks" \
+  -backend-config="encrypt=true"
+
+terraform fmt -check
+terraform validate
+terraform plan
+terraform apply
+```
+
+Expect the `terraform apply` for the dev environment to take **15-20 minutes**
+(EKS control plane provisioning is the slow part). Take a screenshot of the
+successful apply output (`docs/screenshots/terraform-apply-success.png`).
+
+```bash
+# 3. Connect kubectl to the new cluster
+aws eks update-kubeconfig --region eu-central-1 --name autogitops-dev
+
+# 4. Verify
+kubectl get nodes
+kubectl get pods -A
+```
+
+Screenshot `docs/screenshots/eks-nodes.png` and
+`docs/screenshots/kube-system-pods.png`, then update the "EKS Platform"
+section above with what was actually observed (node count, any add-on pods
+that took a while to become Ready, anything that surprised you).
+
+```bash
+# 5. Tear down when done testing for this session
+cd ../../environments/dev
+terraform destroy
+```
+
+Screenshot `docs/screenshots/terraform-destroy-success.png`. Do not skip this
+step between sessions -- see [cost-notes.md](cost-notes.md).
+
