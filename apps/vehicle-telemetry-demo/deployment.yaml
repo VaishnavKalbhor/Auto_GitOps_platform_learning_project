@@ -1,0 +1,53 @@
+# Demo workload standing in for a connected-vehicle telemetry ingestion
+# service. Uses nginx rather than a custom image so the platform pieces
+# (GitOps, HPA, self-healing, monitoring) can be demonstrated without also
+# needing a container registry -- swap `image:` for a real service (e.g.
+# the telemetry-service image from the AutoSecureOps project) once you have
+# somewhere to push it.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vehicle-telemetry-demo
+  namespace: vehicle-demo
+  labels:
+    app: vehicle-telemetry-demo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: vehicle-telemetry-demo
+  template:
+    metadata:
+      labels:
+        app: vehicle-telemetry-demo
+    spec:
+      containers:
+        - name: vehicle-telemetry-demo
+          image: nginxinc/nginx-unprivileged:1.27-alpine
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "64Mi"
+            limits:
+              cpu: "250m"
+              memory: "128Mi"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL

@@ -35,3 +35,11 @@ Ran a brace/paren/bracket balance check across every .tf file as a lightweight s
 Wrote out the full deployment runbook for the first real `terraform apply` -- bootstrap first (creates remote state), then the dev environment with explicit `-backend-config` flags (kept out of the committed backend.tf so no real bucket name is hardcoded in git), then `aws eks update-kubeconfig` and verification with `kubectl get nodes` / `kubectl get pods -A`, ending with `terraform destroy`. Added docs/screenshots/README.md listing all the evidence screenshots this project will eventually need.
 
 **Not executed** -- no AWS account access in this build environment. This is the first day where "learning goal: provision the cluster and connect to it" genuinely cannot be completed without real AWS credentials; everything here is the runbook, ready to follow, not a report of having done it. The platform-design.md EKS section is explicitly marked to be filled in with real observations after the first apply.
+
+## Day 6
+
+Added the vehicle-telemetry-demo Kubernetes manifests: a dedicated `vehicle-demo` namespace, a 2-replica Deployment (resource requests/limits, readiness/liveness probes, non-root securityContext), a ClusterIP Service, and an HPA (2-5 replicas, 60% CPU target), tied together with kustomization.yaml. Used `nginxinc/nginx-unprivileged` as a stand-in workload rather than a custom image -- this project is about the platform (Terraform/EKS/ArgoCD/monitoring), not the application, and using a public image avoids needing a container registry just to demonstrate autoscaling and self-healing. Documented in the deployment.yaml comments that this is swappable for a real service later (e.g. the telemetry-service from the AutoSecureOps project).
+
+Noted for later: the HPA needs the `metrics-server` add-on running in-cluster to read CPU utilization -- EKS doesn't install it by default. Need to add `aws eks create-addon --addon-name metrics-server ...` (or a Helm install) to the Day 11 HPA test runbook.
+
+All 5 YAML files validated with PyYAML. Added tests/kubernetes/smoke-test.sh.
