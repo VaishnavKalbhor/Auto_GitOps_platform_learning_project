@@ -43,3 +43,7 @@ Added the vehicle-telemetry-demo Kubernetes manifests: a dedicated `vehicle-demo
 Noted for later: the HPA needs the `metrics-server` add-on running in-cluster to read CPU utilization -- EKS doesn't install it by default. Need to add `aws eks create-addon --addon-name metrics-server ...` (or a Helm install) to the Day 11 HPA test runbook.
 
 All 5 YAML files validated with PyYAML. Added tests/kubernetes/smoke-test.sh.
+
+## Day 7
+
+Added .github/workflows/terraform-checks.yml (fmt/init -backend=false/validate across both terraform/bootstrap and terraform/environments/dev via a matrix, plus a Checkov IaC scan with soft_fail so it reports without blocking yet -- tightened later once findings are triaged) and k8s-manifest-checks.yml (yamllint across apps/argocd/monitoring, plus kubeconform schema validation against the kustomize-rendered demo app manifests). This is the first point where the Terraform code actually gets validated by a real `terraform validate` -- since this sandbox has no terraform binary, the first real validation of everything built on Days 2-5 will happen on the first GitHub Actions run of this workflow, not before. Worth watching that first run closely.

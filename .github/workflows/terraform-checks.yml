@@ -1,0 +1,47 @@
+name: Terraform Checks
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  fmt-validate:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        working_dir:
+          - terraform/bootstrap
+          - terraform/environments/dev
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7.5"
+
+      - name: Terraform fmt (check only)
+        working-directory: ${{ matrix.working_dir }}
+        run: terraform fmt -check -recursive
+
+      - name: Terraform init (no backend -- syntax/schema only, no AWS access)
+        working-directory: ${{ matrix.working_dir }}
+        run: terraform init -backend=false -input=false
+
+      - name: Terraform validate
+        working-directory: ${{ matrix.working_dir }}
+        run: terraform validate
+
+  checkov:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkov IaC scan
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: terraform/
+          framework: terraform
+          quiet: true
+          soft_fail: true

@@ -1,0 +1,37 @@
+name: Kubernetes Manifest Checks
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  yamllint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: yamllint
+        uses: ibiqlik/action-yamllint@v3
+        with:
+          file_or_dir: apps/ argocd/ monitoring/
+          config_data: |
+            extends: default
+            rules:
+              line-length: disable
+              document-start: disable
+
+  kubeconform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build manifests with kustomize
+        run: |
+          kubectl kustomize apps/vehicle-telemetry-demo > /tmp/vehicle-telemetry-demo.rendered.yaml
+
+      - name: kubeconform schema validation
+        uses: docker://ghcr.io/yannh/kubeconform:latest
+        with:
+          entrypoint: /kubeconform
+          args: -strict -summary /tmp/vehicle-telemetry-demo.rendered.yaml
