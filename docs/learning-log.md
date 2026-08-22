@@ -47,3 +47,9 @@ All 5 YAML files validated with PyYAML. Added tests/kubernetes/smoke-test.sh.
 ## Day 7
 
 Added .github/workflows/terraform-checks.yml (fmt/init -backend=false/validate across both terraform/bootstrap and terraform/environments/dev via a matrix, plus a Checkov IaC scan with soft_fail so it reports without blocking yet -- tightened later once findings are triaged) and k8s-manifest-checks.yml (yamllint across apps/argocd/monitoring, plus kubeconform schema validation against the kustomize-rendered demo app manifests). This is the first point where the Terraform code actually gets validated by a real `terraform validate` -- since this sandbox has no terraform binary, the first real validation of everything built on Days 2-5 will happen on the first GitHub Actions run of this workflow, not before. Worth watching that first run closely.
+
+## Day 8
+
+Documented the ArgoCD install procedure in argocd/install.md: create the namespace, apply the stock install manifest, port-forward the API server, and pull the initial admin password from the generated secret. Explained what each ArgoCD component does (server/repo-server/application-controller/dex/redis) since "just apply this YAML" without understanding the pieces isn't the point of the project.
+
+Not executed -- no live cluster to install ArgoCD onto in this build. This is the runbook to follow once Day 5's cluster is actually up.
