@@ -53,3 +53,11 @@ Added .github/workflows/terraform-checks.yml (fmt/init -backend=false/validate a
 Documented the ArgoCD install procedure in argocd/install.md: create the namespace, apply the stock install manifest, port-forward the API server, and pull the initial admin password from the generated secret. Explained what each ArgoCD component does (server/repo-server/application-controller/dex/redis) since "just apply this YAML" without understanding the pieces isn't the point of the project.
 
 Not executed -- no live cluster to install ArgoCD onto in this build. This is the runbook to follow once Day 5's cluster is actually up.
+
+## Day 9
+
+Added the ArgoCD Application manifests: vehicle-telemetry-app.yaml (points at apps/vehicle-telemetry-demo, auto-sync + self-heal + CreateNamespace), monitoring-app.yaml (kube-prometheus-stack from its Helm repo), and app-of-apps.yaml (the one manifest you actually `kubectl apply` by hand -- it bootstraps both child Applications from argocd/applications/).
+
+Caught a real bug while reviewing monitoring-app.yaml against the ArgoCD Application CRD from memory: I'd initially written both `spec.source` (singular) and `spec.sources` (the multi-source list) on the same Application, which ArgoCD rejects outright ("cannot use both source and sources fields"). Needed `sources` (plural) here specifically because the Helm chart comes from the prometheus-community Helm repo while its values file comes from this Git repo -- that's exactly what multi-source Applications are for. Fixed by removing the singular `source` block.
+
+Updated docs/gitops-workflow.md with the app-of-apps explanation and the planned replica-count drift test. All 3 ArgoCD YAML files validated with PyYAML. Still unexecuted against a real ArgoCD instance.

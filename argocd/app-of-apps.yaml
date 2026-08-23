@@ -1,0 +1,26 @@
+# App-of-apps pattern: apply this ONE manifest after ArgoCD is installed,
+# and it bootstraps every other Application in argocd/applications/ --
+# you never have to `kubectl apply` the individual app manifests by hand.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: app-of-apps
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/<your-github-username>/autogitops-platform.git
+    targetRevision: main
+    path: argocd/applications
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
