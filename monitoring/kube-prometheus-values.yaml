@@ -1,0 +1,64 @@
+# Values for the prometheus-community/kube-prometheus-stack Helm chart.
+# Tuned down for a small (t3.small, 1-3 node) learning cluster -- a
+# production install would raise most of these limits and add persistent
+# storage classes explicitly rather than relying on emptyDir/defaults.
+
+fullnameOverride: monitoring
+
+prometheus:
+  prometheusSpec:
+    retention: 6h  # short retention -- this cluster is destroyed after each session anyway
+    resources:
+      requests:
+        cpu: 100m
+        memory: 400Mi
+      limits:
+        cpu: 500m
+        memory: 800Mi
+    # No persistent volume claim configured -- metrics are lost when the
+    # cluster is destroyed, which is expected and fine for this project.
+    # A longer-lived platform would add storageSpec here.
+
+alertmanager:
+  alertmanagerSpec:
+    resources:
+      requests:
+        cpu: 25m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+
+grafana:
+  enabled: true
+  adminPassword: "changeme-set-a-real-value"  # override at install time with --set grafana.adminPassword=... rather than committing a real one
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  defaultDashboardsEnabled: true
+  service:
+    type: ClusterIP
+
+# Not enabling grafana.ingress -- access via kubectl port-forward for this
+# learning cluster (same reasoning as ArgoCD, see argocd/install.md).
+
+kubeStateMetrics:
+  enabled: true
+
+nodeExporter:
+  enabled: true
+
+# Reduce the number of scrape targets kube-prometheus-stack tries to reach
+# by default, since etcd/scheduler/controller-manager metrics aren't exposed
+# on managed EKS control planes (AWS manages those, they're not reachable
+# the way they would be on a self-managed cluster).
+kubeEtcd:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeControllerManager:
+  enabled: false

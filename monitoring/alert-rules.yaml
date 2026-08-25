@@ -1,0 +1,41 @@
+# Supplementary PrometheusRule, deployed alongside kube-prometheus-stack.
+# Kept small and specific to this project's demo app rather than a generic
+# rule dump -- the point is showing you can write and reason about an
+# alert, not maximizing rule count.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: vehicle-telemetry-demo-alerts
+  namespace: monitoring
+  labels:
+    release: monitoring  # must match kube-prometheus-stack's ruleSelector
+spec:
+  groups:
+    - name: vehicle-telemetry-demo
+      rules:
+        - alert: VehicleTelemetryDemoDown
+          expr: kube_deployment_status_replicas_available{deployment="vehicle-telemetry-demo", namespace="vehicle-demo"} == 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "vehicle-telemetry-demo has zero available replicas"
+            description: "The vehicle-telemetry-demo Deployment in vehicle-demo has had 0 available replicas for more than 2 minutes."
+
+        - alert: VehicleTelemetryDemoHighRestarts
+          expr: increase(kube_pod_container_status_restarts_total{namespace="vehicle-demo"}[15m]) > 3
+          for: 0m
+          labels:
+            severity: warning
+          annotations:
+            summary: "vehicle-telemetry-demo pod restarting frequently"
+            description: "A pod in vehicle-demo has restarted more than 3 times in the last 15 minutes -- possible crash loop."
+
+        - alert: VehicleTelemetryDemoHPAMaxedOut
+          expr: kube_horizontalpodautoscaler_status_current_replicas{namespace="vehicle-demo", horizontalpodautoscaler="vehicle-telemetry-demo"} >= kube_horizontalpodautoscaler_spec_max_replicas{namespace="vehicle-demo", horizontalpodautoscaler="vehicle-telemetry-demo"}
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "vehicle-telemetry-demo HPA at max replicas"
+            description: "The HPA has been at its configured maxReplicas for 5+ minutes -- sustained load may need a higher ceiling or bigger nodes."

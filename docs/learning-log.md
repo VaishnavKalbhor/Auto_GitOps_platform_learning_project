@@ -61,3 +61,9 @@ Added the ArgoCD Application manifests: vehicle-telemetry-app.yaml (points at ap
 Caught a real bug while reviewing monitoring-app.yaml against the ArgoCD Application CRD from memory: I'd initially written both `spec.source` (singular) and `spec.sources` (the multi-source list) on the same Application, which ArgoCD rejects outright ("cannot use both source and sources fields"). Needed `sources` (plural) here specifically because the Helm chart comes from the prometheus-community Helm repo while its values file comes from this Git repo -- that's exactly what multi-source Applications are for. Fixed by removing the singular `source` block.
 
 Updated docs/gitops-workflow.md with the app-of-apps explanation and the planned replica-count drift test. All 3 ArgoCD YAML files validated with PyYAML. Still unexecuted against a real ArgoCD instance.
+
+## Day 10
+
+Added monitoring/kube-prometheus-values.yaml (Prometheus/Alertmanager/Grafana resource requests sized for a small t3.small node group, 6h retention with no PVC since the cluster is destroyed after each session anyway, control-plane scraping disabled since EKS doesn't expose etcd/scheduler/controller-manager), monitoring/alert-rules.yaml (a PrometheusRule with 3 alerts scoped to the demo app: zero-replica, high-restart-rate, HPA-maxed-out), and monitoring/grafana-dashboard-notes.md with install/port-forward/dashboard-navigation instructions. Updated docs/observability.md to explain the deliberate scope cuts rather than just listing what's there.
+
+Not installed against a real cluster -- helm binary isn't available in this sandbox either (same restriction as terraform/kubectl). YAML validated with PyYAML; the Helm values schema itself (are these the right keys for kube-prometheus-stack's current chart version?) can only really be confirmed with a real `helm install --dry-run` or `helm template` against the actual chart, which needs network access this sandbox doesn't have to Helm repos either.
