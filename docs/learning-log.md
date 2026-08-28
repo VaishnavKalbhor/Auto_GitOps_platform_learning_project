@@ -75,3 +75,9 @@ Added tests/load/generate-load.sh (a busybox pod looping wget against the demo s
 Explicitly called out the metrics-server prerequisite (`aws eks create-addon --addon-name metrics-server`) since EKS doesn't install it by default -- this was flagged as a to-do back on Day 6 when the HPA manifest was written, and now the runbook actually handles it instead of leaving it as a surprise mid-test.
 
 Not run against a real cluster.
+
+## Day 12
+
+Added tests/kubernetes/failure-test.sh -- automates the pod-delete half of the self-healing test (finds a running vehicle-telemetry-demo pod via label selector, deletes it, watches for 30s as the replacement comes up) and prints the node cordon/drain commands as a manual follow-on step (deliberately not automated -- draining a node is disruptive enough that it should be a conscious action, not something a script does unattended). The narrative/results writeup for this test already lives in docs/autoscaling-and-self-healing.md (written on Day 11 alongside the HPA test, since both are "prove the platform does the thing it claims to do" tests and read better together than split across two docs).
+
+Not run against a real cluster.
