@@ -5,16 +5,31 @@ installed -- see docs/learning-log.md.)*
 
 ## Install
 
+Create the Grafana admin credentials as a Secret *before* installing the
+chart -- values.yaml deliberately has no password field in it (see
+docs/security-findings.md, Finding 2):
+
 ```bash
+kubectl create namespace monitoring
+
+kubectl create secret generic grafana-admin-credentials \
+  -n monitoring \
+  --from-literal=admin-user=admin \
+  --from-literal=admin-password="$(openssl rand -base64 20)"
+
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
-kubectl create namespace monitoring
 helm install monitoring prometheus-community/kube-prometheus-stack \
   -n monitoring \
-  -f monitoring/kube-prometheus-values.yaml \
-  --set grafana.adminPassword=<a-real-password-not-the-placeholder>
+  -f monitoring/kube-prometheus-values.yaml
 
 kubectl apply -f monitoring/alert-rules.yaml
+```
+
+Retrieve the generated password later with:
+
+```bash
+kubectl get secret grafana-admin-credentials -n monitoring -o jsonpath='{.data.admin-password}' | base64 -d
 ```
 
 (In normal operation this is installed via the `monitoring` ArgoCD

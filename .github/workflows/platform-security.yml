@@ -1,0 +1,66 @@
+name: Platform Security
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  terraform-security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7.5"
+
+      - name: Terraform fmt (check only)
+        run: terraform fmt -check -recursive terraform/
+
+      - name: Terraform validate (bootstrap)
+        working-directory: terraform/bootstrap
+        run: |
+          terraform init -backend=false -input=false
+          terraform validate
+
+      - name: Terraform validate (dev environment)
+        working-directory: terraform/environments/dev
+        run: |
+          terraform init -backend=false -input=false
+          terraform validate
+
+      - name: Checkov Terraform scan
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: terraform/
+          framework: terraform
+          quiet: true
+          soft_fail: true
+          output_format: cli
+
+  kubernetes-manifest-security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Render demo app manifests with kustomize
+        run: kubectl kustomize apps/vehicle-telemetry-demo > /tmp/rendered.yaml
+
+      - name: kube-score
+        uses: zegl/kube-score.docker.action@v1.0.6
+        with:
+          input: /tmp/rendered.yaml
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks secret scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

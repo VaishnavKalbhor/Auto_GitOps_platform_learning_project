@@ -31,7 +31,16 @@ alertmanager:
 
 grafana:
   enabled: true
-  adminPassword: "changeme-set-a-real-value"  # override at install time with --set grafana.adminPassword=... rather than committing a real one
+  # No adminPassword field here on purpose -- putting even a placeholder
+  # password key in a values file trains the habit of committing secrets to
+  # Git. Instead, Grafana reads its admin credentials from a Kubernetes
+  # Secret created out-of-band (see monitoring/grafana-dashboard-notes.md
+  # for the exact `kubectl create secret` command to run once, before
+  # installing this chart). See docs/security-findings.md, Finding 2.
+  admin:
+    existingSecret: "grafana-admin-credentials"
+    userKey: admin-user
+    passwordKey: admin-password
   resources:
     requests:
       cpu: 50m
