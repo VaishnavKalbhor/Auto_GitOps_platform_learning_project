@@ -87,3 +87,18 @@ Not run against a real cluster.
 Added .github/workflows/platform-security.yml (Terraform fmt/validate + Checkov, kube-score against the rendered demo app manifests, Gitleaks secret scan) and tests/terraform/checkov.sh for local runs. Wrote docs/security-findings.md with 5 findings, following the same "risk / remediation / learning" format as AutoSecureOps.
 
 The most useful one wasn't from a tool: reviewing monitoring/kube-prometheus-values.yaml, I noticed the Grafana values had an `adminPassword` field with a placeholder value and a comment telling the installer to override it. Even as an obvious placeholder, that's a password-shaped field in a file meant to be committed to Git -- exactly the pattern that eventually leaks a real credential. Changed it to `grafana.admin.existingSecret`, referencing a Secret created out-of-band via `kubectl create secret` with a randomly generated password (updated monitoring/grafana-dashboard-notes.md with the exact command). Documented explicitly that Gitleaks wouldn't have caught the original version, since a placeholder doesn't pattern-match as a real secret -- this one had to be caught by reading the file with the question "would I be comfortable if this exact file were public," not by tooling.
+
+## Day 14
+
+Final polish pass: rewrote README.md with the full structure (overview, automotive context, cost warning, tech stack, what I built, documentation links, screenshots pointer) and, deliberately, an honest Validation table -- every row says "Not yet run" with a pointer to the relevant runbook, rather than claiming Passed for things that were only ever written and reviewed, never executed against real AWS. That distinction is the whole point of this log.
+
+Ran a final verification pass: all 13 YAML files across apps/argocd/monitoring/.github validated with PyYAML, all 17 .tf files brace/paren/bracket-balanced, all 6 shell scripts pass `bash -n` syntax check. Working tree clean, 14 commits.
+
+## Known gaps going into review
+
+This project needs a real AWS account to become more than a well-reviewed pile of code:
+
+- Nothing has been applied. `terraform validate` itself has never run for real (no terraform binary in this build environment) -- the FIRST real validation of every Terraform file happens on the first GitHub Actions run of terraform-checks.yml, not before.
+- The two bugs caught this build (invalid `depends_on` on a variable, illegal `source`+`sources` on an ArgoCD Application) were found by careful reading, not tooling -- there may be others a real `terraform validate` or `argocd app create --dry-run` would catch that hand-review missed.
+- Helm values (monitoring/kube-prometheus-values.yaml) were written against my knowledge of the kube-prometheus-stack chart's schema but never `helm template`'d against the real chart -- keys or structure may have drifted from the current chart version (pinned loosely to "62.*" in the ArgoCD Application).
+- Cost estimate: following the runbook (EKS + 2 t3.small nodes + 1 NAT Gateway, torn down within a few hours) should stay in the low single-digit dollars per session, but this has not been measured against a real AWS bill -- set the budget alarm regardless of this estimate.
