@@ -1,0 +1,15 @@
+# kind cluster config for the free, local version of this platform.
+# Shape roughly mirrors the EKS dev environment (terraform/environments/dev):
+# one control-plane node + 2 workers, standing in for the managed node
+# group's desired_size=2. This is NOT a substitute for the Terraform/VPC/IAM
+# work -- kind runs everything as Docker containers on one machine, so there
+# is no real cloud networking, no IAM, no multi-AZ story. It exists purely
+# to validate everything *on top of* Kubernetes for free: ArgoCD, GitOps
+# sync, monitoring, HPA, self-healing. See local/README.md.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: autogitops-local
+nodes:
+  - role: control-plane
+  - role: worker
+  - role: worker

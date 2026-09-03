@@ -33,6 +33,12 @@ Gateway, EC2 worker nodes). **Set an AWS Budget alarm before running
 throughout: `terraform apply` -> test and screenshot -> `terraform destroy`.
 Never leave the cluster running between sessions.
 
+**Want to see/demo most of this without any AWS cost?** See
+[local/README.md](local/README.md) -- ArgoCD, GitOps sync, Prometheus/Grafana,
+HPA autoscaling, and pod self-healing all run for real against a free local
+`kind` cluster. Only the Terraform/EKS provisioning layer needs a real AWS
+account.
+
 ## Architecture
 
 See [docs/architecture.md](docs/architecture.md) for the full breakdown.
@@ -70,21 +76,22 @@ credentials available in the build environment (see
 [docs/learning-log.md](docs/learning-log.md) for the day-by-day detail of
 what that meant). Every piece of code below was written and hand/tool-reviewed
 as carefully as possible without a live AWS account, Terraform binary,
-kubectl, or Helm available -- but **none of it has been run against real AWS
-infrastructure yet.** The table below reflects that honestly; update it with
-real results after your first `terraform apply` and cluster walkthrough.
+kubectl, or Helm available. The "Provable locally?" column shows which parts
+can be validated for real, right now, at zero cost via `local/` -- see
+[local/README.md](local/README.md) for the honest breakdown of what a local
+`kind` cluster does and doesn't prove.
 
-| Test | Status |
-|---|---|
-| Terraform fmt/validate | Not yet run (no terraform binary in the build environment; will run on first CI push) |
-| Checkov / kube-score / Gitleaks | Not yet run (same reason; wired into `.github/workflows/platform-security.yml`) |
-| EKS cluster provisioning | Not yet run -- runbook in docs/platform-design.md |
-| ArgoCD install + sync | Not yet run -- runbook in argocd/install.md, docs/gitops-workflow.md |
-| Demo app deployment | Not yet run |
-| Prometheus/Grafana install | Not yet run -- runbook in monitoring/grafana-dashboard-notes.md |
-| HPA scaling | Not yet run -- runbook in docs/autoscaling-and-self-healing.md |
-| Pod self-healing | Not yet run -- runbook in docs/autoscaling-and-self-healing.md |
-| `terraform destroy` | Not yet run |
+| Test | Status | Provable locally (kind), no AWS cost? |
+|---|---|---|
+| Terraform fmt/validate | Not yet run (no terraform binary in the build environment; will run on first CI push) | No -- AWS-specific |
+| Checkov / kube-score / Gitleaks | Not yet run (same reason; wired into `.github/workflows/platform-security.yml`) | Partially -- kube-score/Gitleaks yes, Checkov (Terraform) no |
+| EKS cluster provisioning | Not yet run -- runbook in docs/platform-design.md | No -- AWS-specific |
+| ArgoCD install + sync | Not yet run -- runbook in argocd/install.md, docs/gitops-workflow.md | **Yes** -- see local/README.md |
+| Demo app deployment | Not yet run | **Yes** |
+| Prometheus/Grafana install | Not yet run -- runbook in monitoring/grafana-dashboard-notes.md | **Yes** |
+| HPA scaling | Not yet run -- runbook in docs/autoscaling-and-self-healing.md | **Yes** (after patching metrics-server, see local/bootstrap-local.sh) |
+| Pod self-healing | Not yet run -- runbook in docs/autoscaling-and-self-healing.md | **Yes** |
+| `terraform destroy` | Not yet run | No -- AWS-specific |
 
 Two real bugs were still found and fixed purely through hand-review during
 this build (documented in docs/learning-log.md Day 4 and Day 9): an invalid

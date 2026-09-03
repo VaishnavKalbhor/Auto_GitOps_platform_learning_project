@@ -102,3 +102,29 @@ This project needs a real AWS account to become more than a well-reviewed pile o
 - The two bugs caught this build (invalid `depends_on` on a variable, illegal `source`+`sources` on an ArgoCD Application) were found by careful reading, not tooling -- there may be others a real `terraform validate` or `argocd app create --dry-run` would catch that hand-review missed.
 - Helm values (monitoring/kube-prometheus-values.yaml) were written against my knowledge of the kube-prometheus-stack chart's schema but never `helm template`'d against the real chart -- keys or structure may have drifted from the current chart version (pinned loosely to "62.*" in the ArgoCD Application).
 - Cost estimate: following the runbook (EKS + 2 t3.small nodes + 1 NAT Gateway, torn down within a few hours) should stay in the low single-digit dollars per session, but this has not been measured against a real AWS bill -- set the budget alarm regardless of this estimate.
+
+## Post-launch addition: local (no-AWS-cost) demo path
+
+After finishing the 14-day build, added a `local/` setup so the project can
+be run and demoed without touching AWS billing at all: `local/kind-config.yaml`
+(a 3-node kind cluster mirroring the EKS dev environment's node count),
+`local/bootstrap-local.sh` (creates the kind cluster, installs and patches
+metrics-server for kind's kubelet TLS quirk, installs ArgoCD, creates the
+Grafana secret, and applies app-of-apps.yaml against your real pushed GitHub
+repo), `local/teardown-local.sh`, and `local/README.md` explaining exactly
+what a local kind cluster does and doesn't prove versus real EKS (GitOps/
+monitoring/HPA/self-healing: yes, for real; Terraform/VPC/IAM/EKS
+provisioning: no, that still needs a real AWS account).
+
+Updated the main README's Validation table with a "Provable locally?" column
+and added a Cost Warning callout pointing at this. Updated docs/cost-notes.md
+to recommend this as the default way to iterate/demo, reserving real
+`terraform apply` for when the AWS layer specifically needs to be proven and
+screenshotted.
+
+This doesn't change the honesty posture of the rest of the repo -- the
+Terraform/EKS layer is still genuinely unexecuted and still needs a real AWS
+account and the runbooks in docs/platform-design.md. It just means someone
+reviewing or demoing this project isn't limited to reading code; most of the
+platform's actual behavior (GitOps reconciliation, autoscaling, self-healing,
+monitoring) can be shown running, for free, today.

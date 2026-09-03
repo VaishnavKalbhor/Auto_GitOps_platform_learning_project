@@ -13,3 +13,15 @@ To control cost:
 ## Status
 
 As of this build, the Terraform code has been written and reviewed but **not yet applied** — no AWS costs have been incurred by this project so far. See docs/learning-log.md for exactly which steps are code-only vs. actually run.
+
+## Avoiding AWS cost entirely for most of the demo
+
+The Terraform/EKS layer is the only part of this project that costs money.
+Everything on top of Kubernetes -- ArgoCD, GitOps sync, monitoring, HPA,
+self-healing -- can be run for free against a local `kind` cluster instead.
+See [local/README.md](../local/README.md). This is the recommended way to
+iterate on and demo most of the project without touching AWS billing at all;
+reserve real `terraform apply` runs for when you specifically want to prove
+the AWS provisioning layer works (and screenshot it), then `terraform
+destroy` immediately after.
+
